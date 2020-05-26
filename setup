@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+
+from os import chmod, makedirs, path, system
+from setuptools import setup
+from shutil import copytree, ignore_patterns, rmtree
+from sys import argv
+
+config = {
+	'name': 'apt-method-azure',
+	'version': '1.0.0',
+	'packages': [ 'apt_method_azure' ]
+}
+
+if __name__ == '__main__':
+	args = argv[1:]
+
+	if args and args[0] == 'build' and path.exists('.git'):
+		if path.exists('dist'):
+			rmtree('dist')
+
+		for d in [
+			'dist/DEBIAN',
+			'dist/usr/lib/apt/methods',
+			'dist/usr/lib/python3/dist-packages'
+		]:
+			makedirs(d, exist_ok = True)
+
+		with open('dist/DEBIAN/control', 'w') as f:
+			f.writelines('%s: %s\n' % (k, v) for k, v in dict(
+				Package = config['name'],
+				Version = config['version'],
+				Architecture = 'all'
+			).items())
+
+		p = 'dist/DEBIAN/postinst'
+		with open(p, 'w') as f:
+			f.write(
+				'#!/bin/sh\n'
+				'py3compile --package %s\n'
+			%
+				config['name']
+			)
+		chmod(p, 0o755)
+
+		p = 'dist/usr/lib/apt/methods/azure'
+		with open(p, 'w') as f:
+			f.write(
+				'#!/bin/sh\n'
+				'exec python3 -m%s\n'
+			%
+				config['packages'][0]
+			)
+		chmod(p, 0o755)
+
+		copytree(
+			config['packages'][0],
+			'dist/usr/lib/python3/dist-packages/' + config['packages'][0],
+			ignore = ignore_patterns('__pycache__')
+		)
+		system(__file__ + ' egg_info --egg-base ' + 'dist/usr/lib/python3/dist-packages')
+
+		system('dpkg-deb --build dist .')
+
+	else:
+		setup(**config)
