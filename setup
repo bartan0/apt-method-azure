@@ -7,6 +7,9 @@ from apt_method_azure import __version__
 setup(
 	name = 'apt-method-azure',
 	version = __version__,
+	description = 'APT method to handle repositories in Azure blob storage',
+	author = 'Bartłomiej Sługocki',
+	author_email = '0@bartan0.pl',
 	packages = [ 'apt_method_azure' ],
 	entry_points = {
 		'distutils.commands': [

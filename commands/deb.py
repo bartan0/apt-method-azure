@@ -6,6 +6,8 @@ FILE_CONTROL = \
 '''Package: {name}
 Version: {version}
 Architecture: all
+Maintainer: {author} <{author_email}>
+Description: {description}
 '''
 
 FILE_POSTINST = \
@@ -31,7 +33,10 @@ class deb (Command):
 		self.distinfo = dict(
 			name = dist.metadata.name,
 			version = dist.metadata.version,
-			package = dist.packages[0]
+			package = dist.packages[0],
+			description = dist.metadata.description,
+			author = dist.metadata.author,
+			author_email = dist.metadata.author_email
 		)
 
 	def _file (self, filepath, content, mode = 0o644):
