@@ -7,12 +7,49 @@ from sys import argv
 
 from apt_method_azure import __version__
 
-
 config = {
 	'name': 'apt-method-azure',
 	'version': __version__,
 	'packages': [ 'apt_method_azure' ]
 }
+
+files = dict((name, {
+	'path': path,
+	'content': template.format(
+		name = config['name'],
+		version = config['version'],
+		package = config['packages'][0]
+	)
+}) for name, path, template in [ (
+
+'control',
+'dist/DEBIAN/control',
+
+'''Package: {name}
+Version: {version}
+Architecture: all
+'''
+), (
+
+'postinst',
+'dist/DEBIAN/postinst',
+
+'''#!/bin/sh
+
+py3compile --package {name}
+'''
+), (
+
+'azure',
+'dist/usr/lib/apt/methods/azure',
+
+'''#!/bin/sh
+
+exec python3 -m{package}
+'''
+
+) ])
+
 
 if __name__ == '__main__':
 	args = argv[1:]
@@ -21,46 +58,24 @@ if __name__ == '__main__':
 		if path.exists('dist'):
 			rmtree('dist')
 
-		for d in [
-			'dist/DEBIAN',
-			'dist/usr/lib/apt/methods',
-			'dist/usr/lib/python3/dist-packages'
-		]:
-			makedirs(d, exist_ok = True)
+		for file in files.values():
+			makedirs(path.dirname(file['path']), exist_ok = True)
 
-		with open('dist/DEBIAN/control', 'w') as f:
-			f.writelines('%s: %s\n' % (k, v) for k, v in dict(
-				Package = config['name'],
-				Version = config['version'],
-				Architecture = 'all'
-			).items())
+			with open(file['path'], 'w') as f:
+				f.write(file['content'])
 
-		p = 'dist/DEBIAN/postinst'
-		with open(p, 'w') as f:
-			f.write(
-				'#!/bin/sh\n'
-				'py3compile --package %s\n'
-			%
-				config['name']
-			)
-		chmod(p, 0o755)
+		chmod(files['postinst']['path'], 0o755)
+		chmod(files['azure']['path'], 0o755)
 
-		p = 'dist/usr/lib/apt/methods/azure'
-		with open(p, 'w') as f:
-			f.write(
-				'#!/bin/sh\n'
-				'exec python3 -m%s\n'
-			%
-				config['packages'][0]
-			)
-		chmod(p, 0o755)
+		path_packages = 'dist/usr/lib/python3/dist-packages/'
 
+		makedirs(path_packages, exist_ok = True)
 		copytree(
 			config['packages'][0],
-			'dist/usr/lib/python3/dist-packages/' + config['packages'][0],
+			path_packages + config['packages'][0],
 			ignore = ignore_patterns('__pycache__')
 		)
-		system(__file__ + ' egg_info --egg-base ' + 'dist/usr/lib/python3/dist-packages')
+		system(__file__ + ' egg_info --egg-base ' + path_packages)
 
 		system('dpkg-deb --build dist .')
 
