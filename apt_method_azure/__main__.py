@@ -3,13 +3,14 @@ import sys
 from threading import Thread
 from urllib.parse import urlparse
 
-from .state import state
-from .lib import (
+from . import (
+	__version__,
 	auth_conf_path,
+	getblob,
 	log,
-	send,
 	read_msg,
-	getblob
+	send,
+	state
 )
 
 
@@ -25,7 +26,7 @@ if __name__ == '__main__':
 
 	try:
 		send(100, 'Capabilities',
-			version = '1.0.0',
+			version = __version__,
 			send_config = True
 		)
 
