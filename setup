@@ -5,9 +5,12 @@ from setuptools import setup
 from shutil import copytree, ignore_patterns, rmtree
 from sys import argv
 
+from apt_method_azure import __version__
+
+
 config = {
 	'name': 'apt-method-azure',
-	'version': '1.0.0',
+	'version': __version__,
 	'packages': [ 'apt_method_azure' ]
 }
 
